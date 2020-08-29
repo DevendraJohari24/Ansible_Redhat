@@ -47,7 +47,6 @@
     - name: Install docker-ce
       command: "yum install docker-ce --nobest"
       
-
     - name: Start Docker service
       service:
         name: docker
@@ -60,14 +59,30 @@
         name: "httpd:2.4"
         source: pull
 
+    - name: Create a directory inside Managed node
+      file:     
+        path: /home/user/website
+        state: directory
+        mode: '0755'
+
+    - name: Using Git clone paste an index.html in managed node directory
+      git:
+        repo: 'https://github.com/DevendraJohari24/Facebook-Page'
+        dest: /home/user/website
+        clone: yes
+        update: yes
+
     - name: Create Docker container
       docker_container:
         name: dev-server
         image: "httpd:2.4"
         state: started
         exposed_ports:
+        - "80"
+        ports: 
         - "8080:80"
         volumes:
         - /home/user/website/:/usr/local/apache2/htdocs/
+
         
 
