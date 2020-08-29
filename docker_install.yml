@@ -1,0 +1,73 @@
+
+---
+- name: Install docker
+  gather_facts: No
+  hosts: redhat
+
+  tasks:
+    - name: Install yum utils
+      yum:
+        name: yum-utils
+        state: latest
+
+    - name: Install device-mapper-persistent-data
+      yum:
+        name: device-mapper-persistent-data
+        state: latest
+
+    - name: Install lvm2
+      yum:
+        name: lvm2
+        state: latest
+
+    - name: Add Docker repo
+      yum_repository:
+        name: docker
+        description: docker repo
+        file: docker
+        baseurl: "https://download.docker.com/linux/centos/7/x86_64/stable/"
+        gpgcheck: no
+      become: yes
+
+    - name: "Install pip via docker"
+      command: "pip3 install docker"
+
+    - name: Install containerd.io
+      package:
+        name: containerd.io
+        state: latest
+      become: yes
+
+    - name: Install docker-ce-cli
+      package:
+        name: docker-ce-cli   
+        state: latest
+      become: yes
+
+    - name: Install docker-ce
+      command: "yum install docker-ce --nobest"
+      
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+      become: yes
+
+    - name: Pull Image
+      docker_image: 
+        name: "httpd:2.4"
+        source: pull
+
+    - name: Create Docker container
+      docker_container:
+        name: dev-server
+        image: "httpd:2.4"
+        state: started
+        exposed_ports:
+        - "8080:80"
+        volumes:
+        - /home/user/website/:/usr/local/apache2/htdocs/
+        
+
