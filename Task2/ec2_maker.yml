@@ -1,0 +1,63 @@
+---
+- name: Launching Instance EC2
+  gather_facts: No
+  hosts: localhost
+  vars_files:
+      - secrets.yml
+  tasks: 
+    - name: Installing BOTO
+      pip: 
+         name: "boto"
+         executable: pip3
+    - name: Installing BOTO3
+      pip: 
+         name: "boto3"
+         executable: pip3            
+    - name: Provisioning EC2 Instance
+      ec2: 
+        key_name: keypair        
+        instance_type: t2.micro
+        image: ami-0ebc1ac48dfd14136
+        wait: yes
+        count: 1
+        vpc_subnet_id: subnet-6b99f227
+        assign_public_ip: yes
+        group_id: sg-0e3d71f0aa509838a
+        region: ap-south-1
+        state: present
+        aws_access_key: "{{ access_key }}"
+        aws_secret_key: "{{ secret_key }}"
+      register: specs
+
+    - name: adding Host
+      add_host: 
+        hostname: "{{ specs.instances[0].public_ip }}"
+        groups: ec2_instance
+    - name: printing IP
+      debug: 
+          var: "{{ specs.instances[0].public_ip }}"
+
+
+- name: Changes in EC2 Instance
+  hosts: ec2_instance
+  become: true
+  gather_facts: false
+  tasks: 
+     - name: Doing SSH
+       wait_for_connection: 
+          timeout: 120
+     - name: Installing HTTPD server
+       package: 
+           name: "httpd"
+           state: present
+     - name: Configuring HTTPD server
+       copy: 
+           dest: "/var/www/html/index.html"
+           content: "<h1>Hi Its Devendra!</h1>" 
+     - name: Starting HTTPD Service
+       service: 
+           name: httpd
+           state: started
+           enabled: yes
+
+
